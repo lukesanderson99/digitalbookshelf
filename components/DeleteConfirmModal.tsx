@@ -15,7 +15,7 @@ export default function DeleteConfirmModal({
 
     return (
         <div
-            className="fixed inset-0 flex items-center justify-center z-50"
+            className="fixed inset-0 flex items-center justify-center z-[9999]"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}
             onClick={onCancel}
         >
@@ -23,7 +23,6 @@ export default function DeleteConfirmModal({
                 className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Rest of your modal content stays the same */}
                 <h3 className="text-xl font-semibold text-white mb-4">
                     Delete Book
                 </h3>
@@ -54,4 +53,4 @@ export default function DeleteConfirmModal({
             </div>
         </div>
     );
-  }
+}
