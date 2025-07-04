@@ -136,7 +136,8 @@ export default function Home() {
       setBookToDelete(null);
     } catch (error) {
       console.error('Error deleting book:', error);
-      alert('Error deleting book. Please try again.');
+      // Replace alert with a more elegant error handling if needed
+      console.error('Failed to delete book');
     }
   };
 
@@ -228,39 +229,49 @@ export default function Home() {
     <AuthWrapper>
       <main className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white p-6">
         <div className="max-w-7xl mx-auto">
-          {/* Modern Header with Stats and Logout */}
-          <div className="flex justify-between items-center mb-10">
+          {/* Logout Button - Top Right Corner */}
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1.5 text-gray-400 hover:text-red-400 transition-all text-sm font-medium hover:bg-red-500/10 rounded-lg"
+            >
+              Logout
+            </button>
+          </div>
+
+          {/* Modern Header with Stats */}
+          <div className="flex justify-between items-center mb-12">
             {/* Logo Section */}
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                Digital Bookshelf
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent tracking-tight">
+                📚 Digital Bookshelf
               </h1>
             </div>
 
-            {/* Statistics Cards and Logout Button */}
-            <div className="flex gap-2">
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg px-3 py-2 text-center min-w-[60px]">
-                <div className="text-lg font-bold text-purple-400">{books.length}</div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">Total Books</div>
+            {/* Statistics Cards Only */}
+            <div className="flex gap-3">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-center min-w-[70px] hover:bg-white/10 transition-all duration-200">
+                <div className="text-xl font-bold text-purple-400">{books.length}</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wider font-medium">Total Books</div>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg px-3 py-2 text-center min-w-[60px]">
-                <div className="text-lg font-bold text-orange-400">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-center min-w-[70px] hover:bg-white/10 transition-all duration-200">
+                <div className="text-xl font-bold text-orange-400">
                   {books.filter(book => book.reading_status === 'reading').length}
                 </div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">Reading</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wider font-medium">Reading</div>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg px-3 py-2 text-center min-w-[60px]">
-                <div className="text-lg font-bold text-green-400">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-center min-w-[70px] hover:bg-white/10 transition-all duration-200">
+                <div className="text-xl font-bold text-green-400">
                   {books.filter(book => book.reading_status === 'finished').length}
                 </div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">Finished</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wider font-medium">Finished</div>
               </div>
 
               {/* Overall Progress Card */}
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg px-3 py-2 text-center min-w-[60px]">
-                <div className="text-lg font-bold text-blue-400">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-center min-w-[70px] hover:bg-white/10 transition-all duration-200">
+                <div className="text-xl font-bold text-blue-400">
                   {books.length > 0
                     ? Math.round(
                       books.reduce((sum, book) => {
@@ -277,44 +288,48 @@ export default function Home() {
                     )
                     : 0}%
                 </div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">Overall Progress</div>
+                <div className="text-xs text-gray-400 uppercase tracking-wider font-medium">Overall Progress</div>
               </div>
-
-              {/* Logout Button */}
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 transition-all border border-red-500/30 ml-4"
-              >
-                Logout
-              </button>
             </div>
           </div>
 
-          {/* Search Bar and Controls Row - ALL SAME HEIGHT */}
-          <div className="flex justify-between items-center mb-6 gap-6 h-[48px]">
-            <div className="flex-1 max-w-md relative h-full">
-              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg pointer-events-none z-10">
+          {/* Search Bar and Controls Row - Improved Hierarchy */}
+          <div className="flex justify-between items-center mb-8 gap-6 h-[52px]">
+            {/* Primary: Search - More Prominent */}
+            <div className="flex-1 max-w-2xl relative h-full">
+              <div className="absolute left-5 top-1/2 transform -translate-y-1/2 text-purple-400 text-xl pointer-events-none z-10">
                 🔍
               </div>
               <input
                 type="text"
-                placeholder="Search books by title or author..."
-                className="w-full h-full pl-12 pr-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all relative"
+                placeholder="Search your library by title or author..."
+                className="w-full h-full pl-14 pr-6 bg-white/10 backdrop-blur-xl border-2 border-white/20 rounded-2xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all relative shadow-xl text-lg font-medium"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
-            {/* Controls Row */}
-            <div className="flex gap-3 items-center h-full">
-              {/* Reading Status Filter */}
-              <div className="relative h-full">
+            {/* Primary Action: Add Book - Most Prominent */}
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-3 focus:ring-purple-400/50 transition-all flex items-center gap-3 text-base font-bold h-full shadow-xl hover:shadow-purple-500/30 hover:scale-105 border border-blue-500/50"
+            >
+              <Plus size={20} />
+              Add Book
+            </button>
+          </div>
+
+          {/* Secondary Controls Row - Less Prominent */}
+          <div className="flex justify-between items-center mb-10 gap-4">
+            <div className="flex gap-4 items-center">
+              {/* Secondary: Status Filter */}
+              <div className="relative">
                 <select
                   value={selectedReadingStatus || ""}
                   onChange={(e) => setSelectedReadingStatus(e.target.value || null)}
-                  className="h-full px-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all appearance-none cursor-pointer pr-10"
+                  className="px-4 py-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all appearance-none cursor-pointer pr-10 text-sm font-medium"
                 >
-                  <option value="" className="bg-gray-800">📚 All</option>
+                  <option value="" className="bg-gray-800">📚 All Books</option>
                   <option value="to-read" className="bg-gray-800">⏳ To Read</option>
                   <option value="reading" className="bg-gray-800">📖 Reading</option>
                   <option value="finished" className="bg-gray-800">✅ Finished</option>
@@ -326,66 +341,71 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* View Toggle */}
-              <div className="flex bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-1 h-full">
+              {/* Secondary: View Toggle */}
+              <div className="flex bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`px-3 py-2 rounded-lg transition-all h-full flex items-center ${viewMode === 'grid'
-                    ? 'bg-purple-500/30 text-purple-300'
-                    : 'text-gray-400 hover:text-white'
+                  className={`px-3 py-2 rounded-md transition-all flex items-center text-sm font-medium ${viewMode === 'grid'
+                    ? 'bg-white/10 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                 >
-                  📋
+                  📋 Grid
                 </button>
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`px-3 py-2 rounded-lg transition-all h-full flex items-center ${viewMode === 'table'
-                    ? 'bg-purple-500/30 text-purple-300'
-                    : 'text-gray-400 hover:text-white'
+                  className={`px-3 py-2 rounded-md transition-all flex items-center text-sm font-medium ${viewMode === 'table'
+                    ? 'bg-white/10 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                 >
-                  🗃️
+                  🗃️ Table
                 </button>
               </div>
+            </div>
 
-              {/* Add Book Button */}
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all border border-blue-500 flex items-center gap-2 text-sm font-medium h-full"
-              >
-                <Plus size={16} />
-                Add Book
-              </button>
+            {/* Results Counter */}
+            <div className="text-gray-400 text-sm font-medium">
+              {filteredBooks.length} {filteredBooks.length === 1 ? 'book' : 'books'}
+              {searchQuery && ` matching "${searchQuery}"`}
+              {selectedReadingStatus && ` • ${selectedReadingStatus.replace('-', ' ')}`}
             </div>
           </div>
 
-          {/* Filter Chips Row */}
-          <div className="mb-10 flex flex-wrap gap-3">
-            <button
-              className={`px-4 py-2 rounded-2xl font-medium transition-all duration-200 ${selectedCategory === null
-                ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/25"
-                : "bg-white/5 backdrop-blur-xl border border-white/10 text-gray-300 hover:bg-white/10 hover:text-white"
-                }`}
-              onClick={() => setSelectedCategory(null)}
-            >
-              All Books ({books.length})
-            </button>
+          {/* Tertiary: Category Filter Chips - Subtle and Supportive */}
+          <div className="mb-12">
+            <div className="flex items-center gap-6 mb-4">
+              <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Filter by Category</h3>
+              <div className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div>
+            </div>
 
-            {categories.map((category) => {
-              const count = books.filter(book => book.category === category).length;
-              return (
-                <button
-                  key={category}
-                  className={`px-4 py-2 rounded-2xl font-medium transition-all duration-200 ${selectedCategory === category
-                    ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/25"
-                    : "bg-white/5 backdrop-blur-xl border border-white/10 text-gray-300 hover:bg-white/10 hover:text-white"
-                    }`}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category} ({count})
-                </button>
-              );
-            })}
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 text-sm ${selectedCategory === null
+                  ? "bg-white/15 text-white border border-white/20"
+                  : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300 border border-white/10"
+                  }`}
+                onClick={() => setSelectedCategory(null)}
+              >
+                All ({books.length})
+              </button>
+
+              {categories.map((category) => {
+                const count = books.filter(book => book.category === category).length;
+                return (
+                  <button
+                    key={category}
+                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 text-sm ${selectedCategory === category
+                      ? "bg-white/15 text-white border border-white/20"
+                      : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300 border border-white/10"
+                      }`}
+                    onClick={() => setSelectedCategory(category)}
+                  >
+                    {category} ({count})
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Books Display - Grid or Table */}
