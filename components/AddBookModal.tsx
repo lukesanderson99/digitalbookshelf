@@ -1,14 +1,14 @@
+// components/AddBookModal.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { X, Search, User, Tag, Calendar, BookOpen } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { X, Search, User, Tag, Calendar, BarChart3, Upload, BookOpen } from 'lucide-react';
 import BookCoverUpload from './BookCoverUpload';
 
-interface EditBookModalProps {
+interface AddBookModalProps {
     isOpen: boolean;
-    book: Book | null;
-    onSave: (id: string, updates: Partial<Book>) => void;
     onClose: () => void;
+    onAddBook: (book: Omit<Book, "id" | "created_at">) => void;
 }
 
 interface Book {
@@ -25,8 +25,40 @@ interface Book {
     reading_notes?: string | null;
 }
 
-export default function EditBookModal({ isOpen, book, onSave, onClose }: EditBookModalProps) {
-    // Form state
+// Google Books search function (reused from your existing form)
+const searchGoogleBooks = async (query: string) => {
+    if (query.length < 3) return [];
+
+    try {
+        const response = await fetch(
+            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&orderBy=relevance`
+        );
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+
+        return data.items?.map((book: any) => ({
+            googleBooksId: book.id,
+            title: book.volumeInfo.title || 'Unknown Title',
+            author: book.volumeInfo.authors?.join(', ') || 'Unknown Author',
+            category: book.volumeInfo.categories?.[0] || 'Unknown',
+            description: book.volumeInfo.description || '',
+            coverUrl: book.volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') || null,
+            pageCount: book.volumeInfo.pageCount || null,
+            publishedDate: book.volumeInfo.publishedDate || null,
+            publisher: book.volumeInfo.publisher || null
+        })) || [];
+    } catch (error) {
+        console.error('Error searching Google Books:', error);
+        return [];
+    }
+};
+
+export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModalProps) {
+    // Form state (reused from your existing form)
     const [title, setTitle] = useState("");
     const [author, setAuthor] = useState("");
     const [category, setCategory] = useState("");
@@ -38,7 +70,15 @@ export default function EditBookModal({ isOpen, book, onSave, onClose }: EditBoo
     const [progressPercentage, setProgressPercentage] = useState(0);
     const [readingNotes, setReadingNotes] = useState("");
 
+    // Google Books search state
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+    const [hasSearchResults, setHasSearchResults] = useState(false);
+
     // Refs for modal functionality
+    const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
 
     // Handle click outside to close modal
@@ -46,6 +86,11 @@ export default function EditBookModal({ isOpen, book, onSave, onClose }: EditBoo
         const handleClickOutside = (event: MouseEvent) => {
             if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
                 onClose();
+            }
+
+            // Handle dropdown click outside
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowDropdown(false);
             }
         };
 
@@ -68,19 +113,49 @@ export default function EditBookModal({ isOpen, book, onSave, onClose }: EditBoo
         };
     }, [isOpen, onClose]);
 
-    // Populate form when book changes
-    useEffect(() => {
-        if (book) {
-            setTitle(book.title);
-            setAuthor(book.author);
-            setCategory(book.category);
-            setReadingStatus(book.reading_status);
-            setCoverUrl(book.cover_url || "");
-            setProgressPercentage(book.progress_percentage || 0);
-            setDateStarted(book.date_started || "");
-            setReadingNotes(book.reading_notes || "");
+    // Debounced search function (reused from existing form)
+    const handleTitleSearch = (value: string) => {
+        setTitle(value);
+
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
         }
-    }, [book]);
+
+        debounceTimer.current = setTimeout(async () => {
+            if (value.length >= 3) {
+                setIsSearching(true);
+                const results = await searchGoogleBooks(value);
+                setSearchResults(results);
+                setHasSearchResults(results.length > 0);
+                setShowDropdown(results.length > 0);
+                setIsSearching(false);
+            } else {
+                setShowDropdown(false);
+                setSearchResults([]);
+                setHasSearchResults(false);
+            }
+        }, 500);
+    };
+
+    // Handle book selection from dropdown (reused from existing form)
+    const handleBookSelect = (selectedBook: any) => {
+        setTitle(selectedBook.title);
+        setAuthor(selectedBook.author);
+        setCategory(selectedBook.category);
+        if (selectedBook.coverUrl) {
+            setCoverUrl(selectedBook.coverUrl);
+        }
+        setShowDropdown(false);
+        setSearchResults([]);
+        setHasSearchResults(false);
+    };
+
+    // Handle input focus
+    const handleInputFocus = () => {
+        if (hasSearchResults && title.length >= 3) {
+            setShowDropdown(true);
+        }
+    };
 
     // Handle image upload
     const handleImageUpload = (url: string) => {
@@ -91,15 +166,15 @@ export default function EditBookModal({ isOpen, book, onSave, onClose }: EditBoo
         setCoverUrl('');
     };
 
-    // Handle form submission
+    // Handle form submission (reused logic)
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!book || !title || !author || !category) {
+        if (!title || !author || !category) {
             alert('Please fill in all required fields');
             return;
         }
 
-        const updates: Partial<Book> = {
+        const newBook = {
             title,
             author,
             category,
@@ -112,15 +187,32 @@ export default function EditBookModal({ isOpen, book, onSave, onClose }: EditBoo
         };
 
         try {
-            onSave(book.id, updates);
+            await onAddBook(newBook);
+
+            // Reset form and close modal
+            resetForm();
             onClose();
         } catch (error) {
-            console.error('Error updating book:', error);
-            alert('Error updating book. Please try again.');
+            console.error('Error adding book:', error);
+            alert('Error adding book. Please try again.');
         }
     };
 
-    if (!isOpen || !book) return null;
+    const resetForm = () => {
+        setTitle("");
+        setAuthor("");
+        setCategory("");
+        setReadingStatus('to-read');
+        setCoverUrl("");
+        setDateStarted("");
+        setProgressPercentage(0);
+        setReadingNotes("");
+        setSearchResults([]);
+        setShowDropdown(false);
+        setHasSearchResults(false);
+    };
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -142,8 +234,8 @@ export default function EditBookModal({ isOpen, book, onSave, onClose }: EditBoo
                         <BookOpen className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold text-white">Edit Book</h2>
-                        <p className="text-gray-300 text-sm">Update your book details</p>
+                        <h2 className="text-2xl font-bold text-white">Add New Book</h2>
+                        <p className="text-gray-300 text-sm">Build your personal digital library</p>
                     </div>
                 </div>
 
@@ -151,20 +243,56 @@ export default function EditBookModal({ isOpen, book, onSave, onClose }: EditBoo
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Basic Information */}
                     <div className="space-y-6">
-                        {/* Title */}
+
+                        {/* Title with Search */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-200">
                                 Title *
                             </label>
-                            <div className="relative">
+                            <div className="relative" ref={dropdownRef}>
                                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
                                     type="text"
                                     placeholder="Start typing..."
                                     value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
+                                    onChange={(e) => handleTitleSearch(e.target.value)}
+                                    onFocus={handleInputFocus}
                                     className="w-full pl-12 pr-4 py-4 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                                 />
+
+                                {/* Loading indicator */}
+                                {isSearching && (
+                                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-400">
+                                        <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                                    </div>
+                                )}
+
+                                {/* Google Books Dropdown */}
+                                {showDropdown && searchResults.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50">
+                                        {searchResults.map((book) => (
+                                            <button
+                                                key={book.googleBooksId}
+                                                type="button"
+                                                onClick={() => handleBookSelect(book)}
+                                                className="w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors border-b border-gray-700 last:border-b-0 flex items-start gap-3"
+                                            >
+                                                {book.coverUrl && (
+                                                    <img
+                                                        src={book.coverUrl}
+                                                        alt={book.title}
+                                                        className="w-8 h-12 object-cover rounded flex-shrink-0"
+                                                    />
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-white truncate">{book.title}</div>
+                                                    <div className="text-sm text-gray-400 truncate">by {book.author}</div>
+                                                    <div className="text-xs text-blue-400">{book.category}</div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
