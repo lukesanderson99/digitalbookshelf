@@ -25,7 +25,7 @@ interface Book {
     reading_notes?: string | null;
 }
 
-// Google Books search function (reused from your existing form)
+// Google Books search function
 const searchGoogleBooks = async (query: string) => {
     if (query.length < 3) return [];
 
@@ -58,7 +58,7 @@ const searchGoogleBooks = async (query: string) => {
 };
 
 export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModalProps) {
-    // Form state (reused from your existing form)
+    // Form state
     const [title, setTitle] = useState("");
     const [author, setAuthor] = useState("");
     const [category, setCategory] = useState("");
@@ -103,7 +103,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
             document.addEventListener('keydown', handleEscapeKey);
-            document.body.style.overflow = 'hidden'; // Prevent background scroll
+            document.body.style.overflow = 'hidden';
         }
 
         return () => {
@@ -113,7 +113,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
         };
     }, [isOpen, onClose]);
 
-    // Debounced search function (reused from existing form)
+    // Debounced search function
     const handleTitleSearch = (value: string) => {
         setTitle(value);
 
@@ -137,7 +137,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
         }, 500);
     };
 
-    // Handle book selection from dropdown (reused from existing form)
+    // Handle book selection from dropdown
     const handleBookSelect = (selectedBook: any) => {
         setTitle(selectedBook.title);
         setAuthor(selectedBook.author);
@@ -166,7 +166,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
         setCoverUrl('');
     };
 
-    // Handle form submission (reused logic)
+    // Handle form submission
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title || !author || !category) {
@@ -188,8 +188,6 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
 
         try {
             await onAddBook(newBook);
-
-            // Reset form and close modal
             resetForm();
             onClose();
         } catch (error) {
@@ -218,18 +216,18 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div
                 ref={modalRef}
-                className="bg-gray-800 border border-gray-600 rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
+                className="bg-gray-800 border border-gray-600 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col relative"
             >
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-6 right-6 w-8 h-8 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center transition-colors"
+                    className="absolute top-6 right-6 w-8 h-8 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center transition-colors z-10 cursor-pointer"
                 >
                     <X size={16} className="text-gray-300" />
                 </button>
 
-                {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
+                {/* Header - Fixed at top */}
+                <div className="flex items-center gap-4 p-8 pb-6 flex-shrink-0">
                     <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
                         <BookOpen className="w-6 h-6 text-white" />
                     </div>
@@ -239,11 +237,9 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                     </div>
                 </div>
 
-                {/* Form Content */}
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Basic Information */}
-                    <div className="space-y-6">
-
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto px-8">
+                    <div className="space-y-6 pb-4">
                         {/* Title with Search */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-200">
@@ -257,7 +253,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                                     value={title}
                                     onChange={(e) => handleTitleSearch(e.target.value)}
                                     onFocus={handleInputFocus}
-                                    className="w-full pl-12 pr-4 py-4 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                    className="w-full pl-12 pr-4 py-4 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-text"
                                 />
 
                                 {/* Loading indicator */}
@@ -275,7 +271,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                                                 key={book.googleBooksId}
                                                 type="button"
                                                 onClick={() => handleBookSelect(book)}
-                                                className="w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors border-b border-gray-700 last:border-b-0 flex items-start gap-3"
+                                                className="w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors border-b border-gray-700 last:border-b-0 flex items-start gap-3 cursor-pointer"
                                             >
                                                 {book.coverUrl && (
                                                     <img
@@ -309,7 +305,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                                         placeholder="e.g. George Orwell"
                                         value={author}
                                         onChange={(e) => setAuthor(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-4 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                        className="w-full pl-12 pr-4 py-4 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-text"
                                     />
                                 </div>
                             </div>
@@ -325,7 +321,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                                         placeholder="e.g. Dystopian Fiction"
                                         value={category}
                                         onChange={(e) => setCategory(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-4 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                        className="w-full pl-12 pr-4 py-4 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-text"
                                     />
                                 </div>
                             </div>
@@ -358,9 +354,9 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                                         key={status.value}
                                         type="button"
                                         onClick={() => setReadingStatus(status.value as any)}
-                                        className={`p-4 rounded-xl border transition-all duration-200 ${readingStatus === status.value
-                                                ? 'bg-gray-600 border-gray-500 text-white'
-                                                : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white'
+                                        className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer ${readingStatus === status.value
+                                            ? 'bg-gray-600 border-gray-500 text-white'
+                                            : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white'
                                             }`}
                                     >
                                         <div className="text-lg mb-1">{status.icon}</div>
@@ -369,87 +365,91 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                                 ))}
                             </div>
                         </div>
-                    </div>
 
-                    {/* Progress Tracking - Always Visible Based on Status */}
-                    {readingStatus !== 'to-read' && (
-                        <div className="space-y-4">
-                            {/* Date Started - Show for both reading and finished */}
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-200">
-                                    Date Started
-                                </label>
-                                <div className="relative">
-                                    <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                    <input
-                                        type="date"
-                                        value={dateStarted}
-                                        onChange={(e) => setDateStarted(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Progress Bar - Only show for reading status */}
-                            {readingStatus === 'reading' && (
+                        {/* Progress Tracking - Conditional */}
+                        {readingStatus !== 'to-read' && (
+                            <div className="space-y-4">
+                                {/* Date Started */}
                                 <div className="space-y-2">
                                     <label className="block text-sm font-medium text-gray-200">
-                                        Progress: {progressPercentage}%
+                                        Date Started
                                     </label>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        step="5"
-                                        value={progressPercentage}
-                                        onChange={(e) => setProgressPercentage(Number(e.target.value))}
-                                        className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                                        style={{
-                                            background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${progressPercentage}%, #4b5563 ${progressPercentage}%, #4b5563 100%)`
-                                        }}
+                                    <div className="relative">
+                                        <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input
+                                            type="date"
+                                            value={dateStarted}
+                                            onChange={(e) => setDateStarted(e.target.value)}
+                                            className="w-full pl-12 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Progress Bar - Only for reading status */}
+                                {readingStatus === 'reading' && (
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-200">
+                                            Progress: {progressPercentage}%
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            step="5"
+                                            value={progressPercentage}
+                                            onChange={(e) => setProgressPercentage(Number(e.target.value))}
+                                            className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                                            style={{
+                                                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${progressPercentage}%, #4b5563 ${progressPercentage}%, #4b5563 100%)`
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Reading Notes */}
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-200">
+                                        Reading Notes
+                                    </label>
+                                    <textarea
+                                        placeholder="Add any thoughts or notes about this book..."
+                                        rows={3}
+                                        value={readingNotes}
+                                        onChange={(e) => setReadingNotes(e.target.value)}
+                                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none cursor-text"
                                     />
                                 </div>
-                            )}
+                            </div>
+                        )}
+                    </div>
+                </div>
 
-                            {/* Reading Notes - Show for both reading and finished */}
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-200">
-                                    Reading Notes
-                                </label>
-                                <textarea
-                                    placeholder="Add any thoughts or notes about this book..."
-                                    rows={3}
-                                    value={readingNotes}
-                                    onChange={(e) => setReadingNotes(e.target.value)}
-                                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
-                                />
+                {/* Sticky Footer */}
+                <div className="border-t border-gray-600 bg-gray-800 px-8 py-6 flex-shrink-0 rounded-b-3xl">
+                    <form onSubmit={handleSubmit}>
+                        <div className="flex justify-between items-center">
+                            <div className="text-sm text-gray-300">
+                                * Required fields
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="px-6 py-3 bg-white/5 backdrop-blur-xl border border-white/10 text-gray-300 rounded-lg font-semibold hover:bg-white/10 hover:text-white hover:border-white/20 transition-all duration-200 cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 hover:scale-105 border border-blue-500/50 shadow-lg cursor-pointer"
+                                >
+                                    Confirm
+                                </button>
                             </div>
                         </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-between items-center pt-6 border-t border-gray-600">
-                        <div className="text-sm text-gray-300">
-                            * Required fields
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-6 py-3 bg-white/5 backdrop-blur-xl border border-white/10 text-gray-300 rounded-lg font-semibold hover:bg-white/10 hover:text-white hover:border-white/20 transition-all duration-200"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 hover:scale-105 border border-blue-500/50 shadow-lg"
-                            >
-                                Confirm
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     );

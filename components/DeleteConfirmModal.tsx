@@ -1,3 +1,4 @@
+// components/DeleteConfirmModal.tsx
 interface DeleteConfirmModalProps {
     isOpen: boolean;
     bookTitle: string;
@@ -15,12 +16,12 @@ export default function DeleteConfirmModal({
 
     return (
         <div
-            className="fixed inset-0 flex items-center justify-center z-[9999]"
+            className="fixed inset-0 flex items-center justify-center z-[9999] cursor-pointer"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}
             onClick={onCancel}
         >
             <div
-                className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4"
+                className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4 cursor-default"
                 onClick={(e) => e.stopPropagation()}
             >
                 <h3 className="text-xl font-semibold text-white mb-4">
@@ -39,13 +40,13 @@ export default function DeleteConfirmModal({
                 <div className="flex gap-3 justify-end">
                     <button
                         onClick={onCancel}
-                        className="px-6 py-3 bg-white/5 backdrop-blur-xl border border-white/10 text-gray-300 rounded-lg font-semibold hover:bg-white/10 hover:text-white hover:border-white/20 transition-all duration-200"
+                        className="px-6 py-3 bg-white/5 backdrop-blur-xl border border-white/10 text-gray-300 rounded-lg font-semibold hover:bg-white/10 hover:text-white hover:border-white/20 transition-all duration-200 cursor-pointer"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={onConfirm}
-                        className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-200 flex items-center justify-center gap-2 hover:scale-105 border border-red-500/50 shadow-lg"
+                        className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-200 flex items-center justify-center gap-2 hover:scale-105 border border-red-500/50 shadow-lg cursor-pointer"
                     >
                         Delete
                     </button>

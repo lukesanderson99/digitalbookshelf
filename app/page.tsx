@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import BookCard from "../components/BookCard";
 import AddBookModal from "../components/AddBookModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import EditBookModal from "../components/EditBookModal";
 import AuthWrapper from "../components/AuthWrapper";
-import { supabase, Book } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
+import { useBookStore } from "../lib/store";
 import {
   fetchBooks,
   addBook,
@@ -18,29 +19,57 @@ import {
 import { Plus } from 'lucide-react';
 
 export default function Home() {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [addingBook, setAddingBook] = useState(false);
+  // Get everything from the store
+  const {
+    books,
+    loading,
+    searchQuery,
+    selectedCategory,
+    selectedReadingStatus,
+    viewMode,           // ← ADD THIS
+    addingBook,         // ← ADD THIS
+    showAddModal,
+    showEditModal,
+    showDeleteModal,
+    bookToEdit,
+    bookToDelete,
 
-  // Modal state
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [bookToEdit, setBookToEdit] = useState<Book | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
+    // Actions
+    setBooks,
+    setLoading,
+    setSearchQuery,
+    setSelectedCategory,
+    setSelectedReadingStatus,
+    setViewMode,        // ← ADD THIS
+    setAddingBook,      // ← ADD THIS
 
-  // Filter states
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-  const [selectedReadingStatus, setSelectedReadingStatus] = useState<string | null>(null);
+    // Modal actions
+    openAddModal,
+    closeAddModal,
+    openEditModal,
+    closeEditModal,
+    openDeleteModal,
+    closeDeleteModal,
+
+    // Book actions
+    addBook: addBookToStore,
+    updateBook: updateBookInStore,
+    removeBook,
+
+    // Computed values
+    getFilteredBooks,
+    getCategories
+  } = useBookStore()
+
+  // Get filtered data
+  const filteredBooks = getFilteredBooks()
+  const categories = getCategories()
 
   // Load books from database on mount
   useEffect(() => {
     loadBooks();
   }, []);
 
-  // Load books using new database function
   const loadBooks = async () => {
     try {
       setLoading(true);
@@ -59,25 +88,11 @@ export default function Home() {
     }
   };
 
-  // Categories from current books
-  const categories = Array.from(new Set(books.map(book => book.category)));
-
-  // Filter books
-  const filteredBooks = books.filter(book => {
-    const matchesCategory = selectedCategory === null || book.category === selectedCategory;
-    const matchesSearch = searchQuery === "" ||
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = selectedReadingStatus === null || book.reading_status === selectedReadingStatus;
-    return matchesCategory && matchesSearch && matchesStatus;
-  });
-
-  // Add book using new database function
-  const handleAddBook = async (newBookData: Omit<Book, "id" | "created_at">) => {
+  // Add book handler
+  const handleAddBook = async (newBookData: any) => {
     try {
       setAddingBook(true);
 
-      // Create book data with proper typing
       const bookData: CreateBookData = {
         title: newBookData.title,
         author: newBookData.author,
@@ -97,8 +112,7 @@ export default function Home() {
       }
 
       if (data) {
-        // Add the new book to the beginning of the list
-        setBooks([data, ...books]);
+        addBookToStore(data);
       }
     } catch (error) {
       console.error('Error adding book:', error);
@@ -108,16 +122,14 @@ export default function Home() {
     }
   };
 
-  // Show delete confirmation modal
+  // Delete handlers
   const handleDeleteClick = (id: string) => {
     const book = books.find(b => b.id === id);
     if (book) {
-      setBookToDelete(book);
-      setShowDeleteModal(true);
+      openDeleteModal(book);
     }
   };
 
-  // Confirm deletion using new database function
   const handleConfirmDelete = async () => {
     if (!bookToDelete) return;
 
@@ -128,38 +140,24 @@ export default function Home() {
         throw new Error(error);
       }
 
-      // Remove book from local state
-      setBooks(books.filter(book => book.id !== bookToDelete.id));
-
-      // Close modal
-      setShowDeleteModal(false);
-      setBookToDelete(null);
+      removeBook(bookToDelete.id);
+      closeDeleteModal();
     } catch (error) {
       console.error('Error deleting book:', error);
-      // Replace alert with a more elegant error handling if needed
       console.error('Failed to delete book');
     }
   };
 
-  // Cancel deletion
-  const handleCancelDelete = () => {
-    setShowDeleteModal(false);
-    setBookToDelete(null);
-  };
-
-  // Show edit modal
+  // Edit handlers
   const handleEditClick = (id: string) => {
     const book = books.find(b => b.id === id);
     if (book) {
-      setBookToEdit(book);
-      setShowEditModal(true);
+      openEditModal(book);
     }
   };
 
-  // Save edited book using new database function
-  const handleSaveEdit = async (id: string, updates: Partial<Book>) => {
+  const handleSaveEdit = async (id: string, updates: any) => {
     try {
-      // Create update data with proper typing
       const updateData: UpdateBookData = {
         title: updates.title,
         author: updates.author,
@@ -178,29 +176,17 @@ export default function Home() {
         throw new Error(error);
       }
 
-      // Update local state with the returned data
       if (data) {
-        setBooks(books.map(book =>
-          book.id === id ? data : book
-        ));
+        updateBookInStore(id, data);
       }
 
-      // Close modal
-      setShowEditModal(false);
-      setBookToEdit(null);
+      closeEditModal();
     } catch (error) {
       console.error('Error updating book:', error);
       alert('Error updating book. Please try again.');
     }
   };
 
-  // Cancel edit
-  const handleCancelEdit = () => {
-    setShowEditModal(false);
-    setBookToEdit(null);
-  };
-
-  // Logout function
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -233,7 +219,7 @@ export default function Home() {
           <div className="flex justify-end mb-4">
             <button
               onClick={handleLogout}
-              className="px-3 py-1.5 text-gray-400 hover:text-red-400 transition-all text-sm font-medium hover:bg-red-500/10 rounded-lg"
+              className="px-3 py-1.5 text-gray-400 hover:text-red-400 transition-all text-sm font-medium hover:bg-red-500/10 rounded-lg cursor-pointer"
             >
               Logout
             </button>
@@ -241,7 +227,6 @@ export default function Home() {
 
           {/* Modern Header with Stats */}
           <div className="flex justify-between items-center mb-12">
-            {/* Logo Section */}
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent tracking-tight">
                 📚 Digital Bookshelf
@@ -269,7 +254,6 @@ export default function Home() {
                 <div className="text-xs text-gray-400 uppercase tracking-wider font-medium">Finished</div>
               </div>
 
-              {/* Overall Progress Card */}
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-center min-w-[70px] hover:bg-white/10 transition-all duration-200">
                 <div className="text-xl font-bold text-blue-400">
                   {books.length > 0
@@ -293,9 +277,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Search Bar and Controls Row - Improved Hierarchy */}
+          {/* Search Bar and Controls Row */}
           <div className="flex justify-between items-center mb-8 gap-6 h-[52px]">
-            {/* Primary: Search - More Prominent */}
             <div className="flex-1 max-w-2xl relative h-full">
               <div className="absolute left-5 top-1/2 transform -translate-y-1/2 text-purple-400 text-xl pointer-events-none z-10">
                 🔍
@@ -303,26 +286,24 @@ export default function Home() {
               <input
                 type="text"
                 placeholder="Search your library by title or author..."
-                className="w-full h-full pl-14 pr-6 bg-white/10 backdrop-blur-xl border-2 border-white/20 rounded-2xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all relative shadow-xl text-lg font-medium"
+                className="w-full h-full pl-14 pr-6 bg-white/10 backdrop-blur-xl border-2 border-white/20 rounded-2xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 transition-all relative shadow-xl text-lg font-medium cursor-text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
-            {/* Primary Action: Add Book - Most Prominent */}
             <button
-              onClick={() => setShowAddModal(true)}
-              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-3 focus:ring-purple-400/50 transition-all flex items-center gap-3 text-base font-bold h-full shadow-xl hover:scale-105 border border-blue-500/50"
+              onClick={openAddModal}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all flex items-center gap-3 text-base font-semibold shadow-lg hover:scale-105 border border-blue-500/50 cursor-pointer"
             >
               <Plus size={20} />
               Add Book
             </button>
           </div>
 
-          {/* Secondary Controls Row - Less Prominent */}
+          {/* Secondary Controls Row */}
           <div className="flex justify-between items-center mb-10 gap-4">
             <div className="flex gap-3 items-center">
-              {/* Secondary: Status Filter */}
               <div className="relative">
                 <select
                   value={selectedReadingStatus || ""}
@@ -341,11 +322,10 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Secondary: View Toggle */}
               <div className="flex gap-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`px-3 py-1.5 rounded-md transition-all flex items-center text-sm font-medium ${viewMode === 'grid'
+                  className={`px-3 py-1.5 rounded-md transition-all flex items-center text-sm font-medium cursor-pointer ${viewMode === 'grid'
                     ? 'bg-white/10 text-white'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
@@ -354,7 +334,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`px-3 py-1.5 rounded-md transition-all flex items-center text-sm font-medium ${viewMode === 'table'
+                  className={`px-3 py-1.5 rounded-md transition-all flex items-center text-sm font-medium cursor-pointer ${viewMode === 'table'
                     ? 'bg-white/10 text-white'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
@@ -364,7 +344,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Results Counter */}
             <div className="text-gray-400 text-sm font-medium">
               {filteredBooks.length} {filteredBooks.length === 1 ? 'book' : 'books'}
               {searchQuery && ` matching "${searchQuery}"`}
@@ -372,7 +351,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Tertiary: Category Filter Chips - Subtle and Supportive */}
+          {/* Category Filter Chips */}
           <div className="mb-12">
             <div className="flex items-center gap-6 mb-4">
               <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Filter by Category</h3>
@@ -381,7 +360,7 @@ export default function Home() {
 
             <div className="flex flex-wrap gap-3">
               <button
-                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 text-sm ${selectedCategory === null
+                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 text-sm cursor-pointer ${selectedCategory === null
                   ? "bg-white/15 text-white border border-white/20"
                   : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300 border border-white/10"
                   }`}
@@ -395,7 +374,7 @@ export default function Home() {
                 return (
                   <button
                     key={category}
-                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 text-sm ${selectedCategory === category
+                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 text-sm cursor-pointer ${selectedCategory === category
                       ? "bg-white/15 text-white border border-white/20"
                       : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300 border border-white/10"
                       }`}
@@ -490,13 +469,13 @@ export default function Home() {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleEditClick(book.id)}
-                                className="text-green-400 hover:text-green-300 transition-colors"
+                                className="text-green-400 hover:text-green-300 transition-colors cursor-pointer"
                               >
                                 ✏️
                               </button>
                               <button
                                 onClick={() => handleDeleteClick(book.id)}
-                                className="text-red-400 hover:text-red-300 transition-colors"
+                                className="text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                               >
                                 🗑️
                               </button>
@@ -512,27 +491,25 @@ export default function Home() {
           )}
         </div>
 
-        {/* Add Book Modal */}
+        {/* Modals */}
         <AddBookModal
           isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
+          onClose={closeAddModal}
           onAddBook={handleAddBook}
         />
 
-        {/* Delete Confirmation Modal */}
         <DeleteConfirmModal
           isOpen={showDeleteModal}
           bookTitle={bookToDelete?.title || ""}
           onConfirm={handleConfirmDelete}
-          onCancel={handleCancelDelete}
+          onCancel={closeDeleteModal}
         />
 
-        {/* Edit Book Modal */}
         <EditBookModal
           isOpen={showEditModal}
           book={bookToEdit}
           onSave={handleSaveEdit}
-          onClose={handleCancelEdit}
+          onClose={closeEditModal}
         />
       </main>
     </AuthWrapper>

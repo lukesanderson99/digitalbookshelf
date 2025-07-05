@@ -100,7 +100,7 @@ export default function BookCoverUpload({
                     {onRemoveImage && (
                         <button
                             onClick={onRemoveImage}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors cursor-pointer"
                         >
                             <X size={16} />
                         </button>
@@ -110,9 +110,9 @@ export default function BookCoverUpload({
                 // Upload area
                 <div
                     className={`
-            border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+            border-2 border-dashed rounded-lg p-6 text-center transition-colors
             ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
-            ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
+            ${uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           `}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
@@ -137,7 +137,7 @@ export default function BookCoverUpload({
                         <div className="flex flex-col items-center space-y-2">
                             <ImageIcon className="h-12 w-12 text-gray-400" />
                             <p className="text-gray-600">
-                                <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
+                                <span className="font-medium text-blue-600 cursor-pointer">Click to upload</span> or drag and drop
                             </p>
                             <p className="text-sm text-gray-500">PNG, JPG up to 5MB</p>
                         </div>
