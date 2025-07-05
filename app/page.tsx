@@ -312,7 +312,7 @@ export default function Home() {
             {/* Primary Action: Add Book - Most Prominent */}
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-3 focus:ring-purple-400/50 transition-all flex items-center gap-3 text-base font-bold h-full shadow-xl hover:shadow-purple-500/30 hover:scale-105 border border-blue-500/50"
+              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-3 focus:ring-purple-400/50 transition-all flex items-center gap-3 text-base font-bold h-full shadow-xl hover:scale-105 border border-blue-500/50"
             >
               <Plus size={20} />
               Add Book
@@ -321,13 +321,13 @@ export default function Home() {
 
           {/* Secondary Controls Row - Less Prominent */}
           <div className="flex justify-between items-center mb-10 gap-4">
-            <div className="flex gap-4 items-center">
+            <div className="flex gap-3 items-center">
               {/* Secondary: Status Filter */}
               <div className="relative">
                 <select
                   value={selectedReadingStatus || ""}
                   onChange={(e) => setSelectedReadingStatus(e.target.value || null)}
-                  className="px-4 py-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all appearance-none cursor-pointer pr-10 text-sm font-medium"
+                  className="px-4 py-2.5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-purple-400/50 focus:border-purple-400/50 transition-all appearance-none cursor-pointer pr-10 text-sm font-medium"
                 >
                   <option value="" className="bg-gray-800">📚 All Books</option>
                   <option value="to-read" className="bg-gray-800">⏳ To Read</option>
@@ -342,10 +342,10 @@ export default function Home() {
               </div>
 
               {/* Secondary: View Toggle */}
-              <div className="flex bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg">
+              <div className="flex gap-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`px-3 py-2 rounded-md transition-all flex items-center text-sm font-medium ${viewMode === 'grid'
+                  className={`px-3 py-1.5 rounded-md transition-all flex items-center text-sm font-medium ${viewMode === 'grid'
                     ? 'bg-white/10 text-white'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
@@ -354,7 +354,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`px-3 py-2 rounded-md transition-all flex items-center text-sm font-medium ${viewMode === 'table'
+                  className={`px-3 py-1.5 rounded-md transition-all flex items-center text-sm font-medium ${viewMode === 'table'
                     ? 'bg-white/10 text-white'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
@@ -379,7 +379,7 @@ export default function Home() {
               <div className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               <button
                 className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 text-sm ${selectedCategory === null
                   ? "bg-white/15 text-white border border-white/20"

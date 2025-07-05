@@ -309,13 +309,13 @@ export default function EditBookModal({ isOpen, book, onSave, onClose }: EditBoo
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-6 py-3 text-gray-300 hover:text-white transition-colors"
+                                className="px-6 py-3 bg-white/5 backdrop-blur-xl border border-white/10 text-gray-300 rounded-lg font-semibold hover:bg-white/10 hover:text-white hover:border-white/20 transition-all duration-200"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 shadow-lg font-medium"
+                                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 hover:scale-105 border border-blue-500/50 shadow-lg"
                             >
                                 Confirm
                             </button>
