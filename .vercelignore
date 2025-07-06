@@ -1,1 +1,7 @@
 backend/
+backend/**
+*.log
+.env.local
+.env.production
+node_modules/
+.git/
