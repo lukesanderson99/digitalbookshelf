@@ -8,15 +8,123 @@ import EditBookModal from "../components/EditBookModal";
 import AuthWrapper from "../components/AuthWrapper";
 import { supabase } from "../lib/supabase";
 import { useBookStore } from "../lib/store";
-import {
-  fetchBooks,
-  addBook,
-  deleteBook,
-  updateBook,
-  CreateBookData,
-  UpdateBookData
-} from "../lib/database";
 import { Plus } from 'lucide-react';
+
+// Backend API configuration
+const API_BASE_URL = 'http://localhost:3001/api/v1';
+
+// TypeScript interfaces
+interface CreateBookData {
+  title: string;
+  author: string;
+  category: string;
+  cover_url?: string | null;
+  reading_status?: string;
+  progress_percentage?: number;
+  date_started?: string | null;
+  date_finished?: string | null;
+  reading_notes?: string | null;
+}
+
+interface UpdateBookData {
+  title?: string;
+  author?: string;
+  category?: string;
+  cover_url?: string | null;
+  reading_status?: string;
+  progress_percentage?: number;
+  date_started?: string | null;
+  date_finished?: string | null;
+  reading_notes?: string | null;
+}
+
+// Backend API functions
+const backendAPI = {
+  // Fetch all books
+  async fetchBooks() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/books`);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch books');
+      }
+
+      return { data: result.data, error: null };
+    } catch (error: any) {
+      console.error('API Error - fetchBooks:', error);
+      return { data: null, error: error.message };
+    }
+  },
+
+  // Add a new book
+  async addBook(bookData: CreateBookData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/books`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to add book');
+      }
+
+      return { data: result.data, error: null };
+    } catch (error: any) {
+      console.error('API Error - addBook:', error);
+      return { data: null, error: error.message };
+    }
+  },
+
+  // Update a book
+  async updateBook(id: string, updateData: UpdateBookData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/books/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update book');
+      }
+
+      return { data: result.data, error: null };
+    } catch (error: any) {
+      console.error('API Error - updateBook:', error);
+      return { data: null, error: error.message };
+    }
+  },
+
+  // Delete a book
+  async deleteBook(id: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/books/${id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete book');
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      console.error('API Error - deleteBook:', error);
+      return { error: error.message };
+    }
+  }
+};
 
 export default function Home() {
   // Get everything from the store
@@ -26,8 +134,8 @@ export default function Home() {
     searchQuery,
     selectedCategory,
     selectedReadingStatus,
-    viewMode,           // ← ADD THIS
-    addingBook,         // ← ADD THIS
+    viewMode,
+    addingBook,
     showAddModal,
     showEditModal,
     showDeleteModal,
@@ -40,8 +148,8 @@ export default function Home() {
     setSearchQuery,
     setSelectedCategory,
     setSelectedReadingStatus,
-    setViewMode,        // ← ADD THIS
-    setAddingBook,      // ← ADD THIS
+    setViewMode,
+    setAddingBook,
 
     // Modal actions
     openAddModal,
@@ -65,7 +173,7 @@ export default function Home() {
   const filteredBooks = getFilteredBooks()
   const categories = getCategories()
 
-  // Load books from database on mount
+  // Load books from backend on mount
   useEffect(() => {
     loadBooks();
   }, []);
@@ -73,16 +181,20 @@ export default function Home() {
   const loadBooks = async () => {
     try {
       setLoading(true);
-      const { data, error } = await fetchBooks();
+      const { data, error } = await backendAPI.fetchBooks();
 
       if (error) {
         console.error('Error loading books:', error);
+        // Show user-friendly error
+        alert(`Failed to load books: ${error}. Make sure your backend is running on port 3001.`);
         return;
       }
 
       setBooks(data || []);
+      console.log(`✅ Loaded ${data?.length || 0} books from backend`);
     } catch (error) {
       console.error('Unexpected error loading books:', error);
+      alert('Unexpected error loading books. Please check your backend connection.');
     } finally {
       setLoading(false);
     }
@@ -98,14 +210,14 @@ export default function Home() {
         author: newBookData.author,
         category: newBookData.category,
         cover_url: newBookData.cover_url || null,
-        reading_status: newBookData.reading_status,
+        reading_status: newBookData.reading_status || 'to-read',
         progress_percentage: newBookData.progress_percentage || 0,
         date_started: newBookData.date_started || null,
         date_finished: newBookData.date_finished || null,
         reading_notes: newBookData.reading_notes || null,
       };
 
-      const { data, error } = await addBook(bookData);
+      const { data, error } = await backendAPI.addBook(bookData);
 
       if (error) {
         throw new Error(error);
@@ -113,10 +225,13 @@ export default function Home() {
 
       if (data) {
         addBookToStore(data);
+        console.log(`✅ Added book: ${data.title}`);
       }
-    } catch (error) {
+
+      closeAddModal();
+    } catch (error: any) {
       console.error('Error adding book:', error);
-      alert('Error adding book. Please try again.');
+      alert(`Error adding book: ${error.message}. Please try again.`);
     } finally {
       setAddingBook(false);
     }
@@ -134,7 +249,7 @@ export default function Home() {
     if (!bookToDelete) return;
 
     try {
-      const { error } = await deleteBook(bookToDelete.id);
+      const { error } = await backendAPI.deleteBook(bookToDelete.id);
 
       if (error) {
         throw new Error(error);
@@ -142,9 +257,10 @@ export default function Home() {
 
       removeBook(bookToDelete.id);
       closeDeleteModal();
-    } catch (error) {
+      console.log(`✅ Deleted book: ${bookToDelete.title}`);
+    } catch (error: any) {
       console.error('Error deleting book:', error);
-      console.error('Failed to delete book');
+      alert(`Failed to delete book: ${error.message}`);
     }
   };
 
@@ -170,7 +286,7 @@ export default function Home() {
         reading_notes: updates.reading_notes,
       };
 
-      const { data, error } = await updateBook(id, updateData);
+      const { data, error } = await backendAPI.updateBook(id, updateData);
 
       if (error) {
         throw new Error(error);
@@ -178,12 +294,13 @@ export default function Home() {
 
       if (data) {
         updateBookInStore(id, data);
+        console.log(`✅ Updated book: ${data.title}`);
       }
 
       closeEditModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating book:', error);
-      alert('Error updating book. Please try again.');
+      alert(`Error updating book: ${error.message}. Please try again.`);
     }
   };
 
@@ -204,6 +321,7 @@ export default function Home() {
             <div className="flex flex-col items-center gap-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
               <div className="text-xl">Loading your bookshelf...</div>
+              <div className="text-sm text-gray-400">Connecting to backend...</div>
             </div>
           </div>
         </main>
@@ -215,15 +333,49 @@ export default function Home() {
     <AuthWrapper>
       <main className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white p-6">
         <div className="max-w-7xl mx-auto">
-          {/* Logout Button - Top Right Corner */}
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1.5 text-gray-400 hover:text-red-400 transition-all text-sm font-medium hover:bg-red-500/10 rounded-lg cursor-pointer"
-            >
-              Logout
-            </button>
-          </div>
+          {/* Header with Backend Status - Localhost Only */}
+          {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                    Backend Connected
+                  </div>
+                  <a
+                    href={ANALYTICS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full hover:bg-blue-500/30 transition-colors"
+                  >
+                    📊 Analytics
+                  </a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={HEALTH_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full hover:bg-green-500/30 transition-colors"
+                  >
+                    ✅ API Status
+                  </a>
+                  <button
+                    onClick={loadBooks}
+                    className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full hover:bg-blue-500/30 transition-colors cursor-pointer"
+                  >
+                    🔄 Refresh
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1.5 text-gray-400 hover:text-red-400 transition-all text-sm font-medium hover:bg-red-500/10 rounded-lg cursor-pointer"
+              >
+                Logout
+              </button>
+            </div>
+          )}
 
           {/* Modern Header with Stats */}
           <div className="flex justify-between items-center mb-12">
@@ -294,10 +446,20 @@ export default function Home() {
 
             <button
               onClick={openAddModal}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all flex items-center gap-3 text-base font-semibold shadow-lg hover:scale-105 border border-blue-500/50 cursor-pointer"
+              disabled={addingBook}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all flex items-center gap-3 text-base font-semibold shadow-lg hover:scale-105 border border-blue-500/50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Plus size={20} />
-              Add Book
+              {addingBook ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Plus size={20} />
+                  Add Book
+                </>
+              )}
             </button>
           </div>
 
