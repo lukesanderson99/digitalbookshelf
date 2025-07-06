@@ -4,21 +4,25 @@ const dotenv = require('dotenv');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '../.env') });
+// Load environment variables (only in development)
+if (process.env.NODE_ENV !== 'production') {
+    dotenv.config({ path: path.join(__dirname, '../.env') });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Initialize Supabase
 const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
+    process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
 // Middleware
 app.use(cors({
-    origin: 'http://localhost:3000'
+    origin: process.env.NODE_ENV === 'production'
+        ? ['https://digitalbookshelf.vercel.app', 'https://digitalbookshelf-git-main-lukesanderson99.vercel.app']
+        : ['http://localhost:3000', 'http://localhost:3002']
 }));
 app.use(express.json());
 
