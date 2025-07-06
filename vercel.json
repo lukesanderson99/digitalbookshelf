@@ -3,7 +3,6 @@
     "outputDirectory": ".next",
     "framework": "nextjs",
     "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)backend'",
-    "functions": {},
     "routes": [],
     "regions": [
         "cle1"
