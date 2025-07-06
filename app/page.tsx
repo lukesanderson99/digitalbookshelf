@@ -10,8 +10,8 @@ import { supabase } from "../lib/supabase";
 import { useBookStore } from "../lib/store";
 import { Plus } from 'lucide-react';
 
-// Backend API configuration
-const API_BASE_URL = 'http://localhost:3001/api/v1';
+// Backend API configuration - FIXED TO USE ENVIRONMENT VARIABLES
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
 // TypeScript interfaces
 interface CreateBookData {
@@ -343,9 +343,7 @@ export default function Home() {
                     Backend Connected
                   </div>
                   <a
-                    href={process.env.NODE_ENV === 'development'
-                      ? 'http://localhost:3001/api/v1/analytics/dashboard'
-                      : process.env.NEXT_PUBLIC_ANALYTICS_URL || 'http://localhost:3001/api/v1/analytics/dashboard'}
+                    href={process.env.NEXT_PUBLIC_ANALYTICS_URL || 'http://localhost:3001/api/v1/analytics/dashboard'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full hover:bg-blue-500/30 transition-colors"
@@ -355,9 +353,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-2">
                   <a
-                    href={process.env.NODE_ENV === 'development'
-                      ? 'http://localhost:3001/health'
-                      : process.env.NEXT_PUBLIC_HEALTH_URL || 'http://localhost:3001/health'}
+                    href={process.env.NEXT_PUBLIC_HEALTH_URL || 'http://localhost:3001/health'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full hover:bg-green-500/30 transition-colors"
