@@ -14,20 +14,12 @@ interface BookRecommendation {
 async function getBookCover(title: string, author: string): Promise<string | null> {
     try {
         const query = `${title} ${author}`.replace(/[^\w\s]/gi, '').trim();
-
-        // Use AbortController for timeout instead of invalid 'timeout' property
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
         const response = await fetch(
             `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=1&orderBy=relevance`,
             {
-                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BookRecommendationService/1.0)' },
-                signal: controller.signal
+                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BookRecommendationService/1.0)' }
             }
         );
-
-        clearTimeout(timeoutId);
 
         if (!response.ok) {
             console.warn(`Google Books API error for "${title}": ${response.status}`);
@@ -154,7 +146,7 @@ Focus on popular, well-reviewed books that are likely to be available.
             recommendations = getFallbackRecommendations(fallbackGenre);
         }
 
-        // Fetch book covers for all recommendations (with timeout protection)
+        // Fetch book covers for all recommendations
         const recommendationsWithCovers = await Promise.all(
             recommendations.slice(0, 4).map(async (rec) => {
                 try {
@@ -208,7 +200,7 @@ Focus on popular, well-reviewed books that are likely to be available.
     }
 }
 
-// Fallback recommendations if AI fails (now with cover_url field)
+// Fallback recommendations if AI fails
 function getFallbackRecommendations(preferredGenre: string): BookRecommendation[] {
     const fallbackBooks: Record<string, BookRecommendation[]> = {
         'Science': [
