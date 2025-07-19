@@ -14,13 +14,20 @@ interface BookRecommendation {
 async function getBookCover(title: string, author: string): Promise<string | null> {
     try {
         const query = `${title} ${author}`.replace(/[^\w\s]/gi, '').trim();
+
+        // Use AbortController for timeout instead of invalid 'timeout' property
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
         const response = await fetch(
             `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=1&orderBy=relevance`,
             {
                 headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BookRecommendationService/1.0)' },
-                timeout: 5000 // 5 second timeout
+                signal: controller.signal
             }
         );
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             console.warn(`Google Books API error for "${title}": ${response.status}`);
