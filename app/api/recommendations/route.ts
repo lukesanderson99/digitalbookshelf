@@ -10,7 +10,42 @@ interface BookRecommendation {
     cover_url?: string | null;
 }
 
-// Fallback recommendations if AI fails - MOVED TO TOP
+// Google Books API function to fetch book covers
+async function getBookCover(title: string, author: string): Promise<string | null> {
+    try {
+        const query = `${title} ${author}`.replace(/[^\w\s]/gi, '').trim();
+        const response = await fetch(
+            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=1&orderBy=relevance`,
+            {
+                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BookRecommendationService/1.0)' }
+            }
+        );
+
+        if (!response.ok) {
+            console.warn(`Google Books API error for "${title}": ${response.status}`);
+            return null;
+        }
+
+        const data = await response.json();
+
+        if (data.items && data.items.length > 0) {
+            const book = data.items[0];
+            const coverUrl = book.volumeInfo?.imageLinks?.thumbnail;
+
+            if (coverUrl) {
+                // Convert to HTTPS and get higher quality image
+                return coverUrl.replace('http:', 'https:').replace('&zoom=1', '&zoom=2');
+            }
+        }
+
+        return null;
+    } catch (error) {
+        console.error(`Error fetching book cover for "${title}":`, error);
+        return null;
+    }
+}
+
+// Fallback recommendations if AI fails (now with cover_url field)
 function getFallbackRecommendations(preferredGenre: string): BookRecommendation[] {
     const fallbackBooks: Record<string, BookRecommendation[]> = {
         'Science': [
@@ -138,41 +173,6 @@ function getFallbackRecommendations(preferredGenre: string): BookRecommendation[
     return fallbackBooks[preferredGenre] || fallbackBooks['General'];
 }
 
-// Google Books API function to fetch book covers
-async function getBookCover(title: string, author: string): Promise<string | null> {
-    try {
-        const query = `${title} ${author}`.replace(/[^\w\s]/gi, '').trim();
-        const response = await fetch(
-            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=1&orderBy=relevance`,
-            {
-                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BookRecommendationService/1.0)' }
-            }
-        );
-
-        if (!response.ok) {
-            console.warn(`Google Books API error for "${title}": ${response.status}`);
-            return null;
-        }
-
-        const data = await response.json();
-
-        if (data.items && data.items.length > 0) {
-            const book = data.items[0];
-            const coverUrl = book.volumeInfo?.imageLinks?.thumbnail;
-
-            if (coverUrl) {
-                // Convert to HTTPS and get higher quality image
-                return coverUrl.replace('http:', 'https:').replace('&zoom=1', '&zoom=2');
-            }
-        }
-
-        return null;
-    } catch (error) {
-        console.error(`Error fetching book cover for "${title}":`, error);
-        return null;
-    }
-}
-
 export async function POST(request: NextRequest) {
     try {
         if (!process.env.OPENAI_API_KEY) {
@@ -274,7 +274,7 @@ Focus on popular, well-reviewed books that are likely to be available.
             recommendations = getFallbackRecommendations(fallbackGenre);
         }
 
-        // Fetch book covers for all recommendations
+        // Fetch book covers for all recommendations (with timeout protection)
         const recommendationsWithCovers = await Promise.all(
             recommendations.slice(0, 4).map(async (rec) => {
                 try {
