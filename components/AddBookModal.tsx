@@ -9,6 +9,13 @@ interface AddBookModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAddBook: (book: Omit<Book, "id" | "created_at">) => void;
+    initialData?: {
+        title?: string;
+        author?: string;
+        category?: string;
+        reading_notes?: string;
+        cover_url?: string;
+    };
 }
 
 interface Book {
@@ -57,18 +64,18 @@ const searchGoogleBooks = async (query: string) => {
     }
 };
 
-export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModalProps) {
-    // Form state
-    const [title, setTitle] = useState("");
-    const [author, setAuthor] = useState("");
-    const [category, setCategory] = useState("");
+export default function AddBookModal({ isOpen, onClose, onAddBook, initialData }: AddBookModalProps) {
+    // Form state - initialized with initialData if provided
+    const [title, setTitle] = useState(initialData?.title || "");
+    const [author, setAuthor] = useState(initialData?.author || "");
+    const [category, setCategory] = useState(initialData?.category || "");
     const [readingStatus, setReadingStatus] = useState<'to-read' | 'reading' | 'finished'>('to-read');
-    const [coverUrl, setCoverUrl] = useState("");
+    const [coverUrl, setCoverUrl] = useState(initialData?.cover_url || "");
 
     // Progress tracking
     const [dateStarted, setDateStarted] = useState("");
     const [progressPercentage, setProgressPercentage] = useState(0);
-    const [readingNotes, setReadingNotes] = useState("");
+    const [readingNotes, setReadingNotes] = useState(initialData?.reading_notes || "");
 
     // Google Books search state
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -80,6 +87,28 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
     const debounceTimer = useRef<NodeJS.Timeout | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
+
+    // Reset form when modal opens or initialData changes
+    useEffect(() => {
+        if (isOpen) {
+            setTitle(initialData?.title || "");
+            setAuthor(initialData?.author || "");
+            setCategory(initialData?.category || "");
+            setReadingNotes(initialData?.reading_notes || "");
+
+            // Apply cover URL from AI recommendation
+            const coverUrl = initialData?.cover_url || "";
+            setCoverUrl(coverUrl);
+
+            // Reset other fields to defaults
+            setReadingStatus('to-read');
+            setDateStarted("");
+            setProgressPercentage(0);
+            setSearchResults([]);
+            setShowDropdown(false);
+            setHasSearchResults(false);
+        }
+    }, [isOpen, initialData]);
 
     // Handle click outside to close modal
     useEffect(() => {
@@ -232,10 +261,26 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                         <BookOpen className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold text-white">Add New Book</h2>
-                        <p className="text-gray-300 text-sm">Build your personal digital library</p>
+                        <h2 className="text-2xl font-bold text-white">
+                            {initialData ? 'Add Recommended Book' : 'Add New Book'}
+                        </h2>
+                        <p className="text-gray-300 text-sm">
+                            {initialData ? 'Review and confirm the AI recommendation' : 'Build your personal digital library'}
+                        </p>
                     </div>
                 </div>
+
+                {/* AI Recommendation Badge */}
+                {initialData && (
+                    <div className="px-8 pb-4">
+                        <div className="bg-purple-500/20 border border-purple-500/30 rounded-lg p-3 flex items-center gap-3">
+                            <div className="text-purple-300">✨</div>
+                            <div className="text-sm text-purple-200">
+                                This book was recommended by AI based on your reading history
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto px-8">
@@ -332,6 +377,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                             <label className="block text-sm font-medium text-gray-200">
                                 Book Cover
                             </label>
+
                             <BookCoverUpload
                                 onImageUpload={handleImageUpload}
                                 currentImage={coverUrl}
@@ -444,7 +490,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                                     type="submit"
                                     className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 hover:scale-105 border border-blue-500/50 shadow-lg cursor-pointer"
                                 >
-                                    Confirm
+                                    {initialData ? 'Add to Library' : 'Confirm'}
                                 </button>
                             </div>
                         </div>

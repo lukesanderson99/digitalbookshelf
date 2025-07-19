@@ -1,130 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import BookCard from "../components/BookCard";
 import AddBookModal from "../components/AddBookModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import EditBookModal from "../components/EditBookModal";
 import AuthWrapper from "../components/AuthWrapper";
+import RecommendationsSection from "../components/RecommendationsSection";
 import { supabase } from "../lib/supabase";
 import { useBookStore } from "../lib/store";
 import { Plus } from 'lucide-react';
 
-// Backend API configuration - FIXED TO USE ENVIRONMENT VARIABLES
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-// TypeScript interfaces
-interface CreateBookData {
-  title: string;
-  author: string;
-  category: string;
-  cover_url?: string | null;
-  reading_status?: string;
-  progress_percentage?: number;
-  date_started?: string | null;
-  date_finished?: string | null;
-  reading_notes?: string | null;
-}
-
-interface UpdateBookData {
-  title?: string;
-  author?: string;
-  category?: string;
-  cover_url?: string | null;
-  reading_status?: string;
-  progress_percentage?: number;
-  date_started?: string | null;
-  date_finished?: string | null;
-  reading_notes?: string | null;
-}
-
-// Backend API functions
-const backendAPI = {
-  // Fetch all books
-  async fetchBooks() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/books`);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch books');
-      }
-
-      return { data: result.data, error: null };
-    } catch (error: any) {
-      console.error('API Error - fetchBooks:', error);
-      return { data: null, error: error.message };
-    }
-  },
-
-  // Add a new book
-  async addBook(bookData: CreateBookData) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/books`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bookData),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to add book');
-      }
-
-      return { data: result.data, error: null };
-    } catch (error: any) {
-      console.error('API Error - addBook:', error);
-      return { data: null, error: error.message };
-    }
-  },
-
-  // Update a book
-  async updateBook(id: string, updateData: UpdateBookData) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/books/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateData),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update book');
-      }
-
-      return { data: result.data, error: null };
-    } catch (error: any) {
-      console.error('API Error - updateBook:', error);
-      return { data: null, error: error.message };
-    }
-  },
-
-  // Delete a book
-  async deleteBook(id: string) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/books/${id}`, {
-        method: 'DELETE',
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete book');
-      }
-
-      return { error: null };
-    } catch (error: any) {
-      console.error('API Error - deleteBook:', error);
-      return { error: error.message };
-    }
-  }
-};
+// No longer need custom backend API - using Supabase directly!
 
 export default function Home() {
   // Get everything from the store
@@ -169,6 +56,9 @@ export default function Home() {
     getCategories
   } = useBookStore()
 
+  // State for pre-filled modal data from AI recommendations
+  const [modalInitialData, setModalInitialData] = useState<any>(null);
+
   // Get filtered data
   const filteredBooks = getFilteredBooks()
   const categories = getCategories()
@@ -181,23 +71,52 @@ export default function Home() {
   const loadBooks = async () => {
     try {
       setLoading(true);
-      const { data, error } = await backendAPI.fetchBooks();
+
+      // Use Supabase instead of custom API
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error loading books:', error);
-        // Show user-friendly error
-        alert(`Failed to load books: ${error}. Make sure your backend is running on port 3001.`);
+        alert(`Failed to load books: ${error.message}`);
         return;
       }
 
       setBooks(data || []);
-      console.log(`✅ Loaded ${data?.length || 0} books from backend`);
-    } catch (error) {
+      console.log(`✅ Loaded ${data?.length || 0} books from Supabase`);
+    } catch (error: any) {
       console.error('Unexpected error loading books:', error);
-      alert('Unexpected error loading books. Please check your backend connection.');
+      alert('Unexpected error loading books. Please check your connection.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Add book from AI recommendation - opens modal with pre-filled data
+  const handleAddBookFromRecommendation = (recommendationData: any) => {
+    console.log('=== Page.tsx Debug ===');
+    console.log('recommendationData:', recommendationData);
+    console.log('recommendationData.cover_url:', recommendationData.cover_url);
+
+    // Set the initial data for the modal
+    setModalInitialData({
+      title: recommendationData.title,
+      author: recommendationData.author,
+      category: recommendationData.genre,
+      reading_notes: `AI recommended: ${recommendationData.reason}`,
+      cover_url: recommendationData.cover_url, // Include the cover URL
+    });
+
+    // Open the modal
+    openAddModal();
+  };
+
+  // Enhanced close modal function to clear initial data
+  const handleCloseAddModal = () => {
+    closeAddModal();
+    setModalInitialData(null);
   };
 
   // Add book handler
@@ -205,7 +124,7 @@ export default function Home() {
     try {
       setAddingBook(true);
 
-      const bookData: CreateBookData = {
+      const bookData = {
         title: newBookData.title,
         author: newBookData.author,
         category: newBookData.category,
@@ -217,10 +136,15 @@ export default function Home() {
         reading_notes: newBookData.reading_notes || null,
       };
 
-      const { data, error } = await backendAPI.addBook(bookData);
+      // Use Supabase to add book
+      const { data, error } = await supabase
+        .from('books')
+        .insert([bookData])
+        .select()
+        .single();
 
       if (error) {
-        throw new Error(error);
+        throw new Error(error.message);
       }
 
       if (data) {
@@ -249,10 +173,14 @@ export default function Home() {
     if (!bookToDelete) return;
 
     try {
-      const { error } = await backendAPI.deleteBook(bookToDelete.id);
+      // Use Supabase to delete book
+      const { error } = await supabase
+        .from('books')
+        .delete()
+        .eq('id', bookToDelete.id);
 
       if (error) {
-        throw new Error(error);
+        throw new Error(error.message);
       }
 
       removeBook(bookToDelete.id);
@@ -274,7 +202,7 @@ export default function Home() {
 
   const handleSaveEdit = async (id: string, updates: any) => {
     try {
-      const updateData: UpdateBookData = {
+      const updateData = {
         title: updates.title,
         author: updates.author,
         category: updates.category,
@@ -286,10 +214,16 @@ export default function Home() {
         reading_notes: updates.reading_notes,
       };
 
-      const { data, error } = await backendAPI.updateBook(id, updateData);
+      // Use Supabase to update book
+      const { data, error } = await supabase
+        .from('books')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) {
-        throw new Error(error);
+        throw new Error(error.message);
       }
 
       if (data) {
@@ -321,7 +255,7 @@ export default function Home() {
             <div className="flex flex-col items-center gap-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
               <div className="text-xl">Loading your bookshelf...</div>
-              <div className="text-sm text-gray-400">Connecting to backend...</div>
+              <div className="text-sm text-gray-400">Connecting to Supabase...</div>
             </div>
           </div>
         </main>
@@ -340,7 +274,7 @@ export default function Home() {
                 <div className="flex items-center gap-2">
                   <div className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full flex items-center gap-1">
                     <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-                    Backend Connected
+                    Supabase Connected
                   </div>
                   <a
                     href={process.env.NEXT_PUBLIC_ANALYTICS_URL || 'http://localhost:3001/api/v1/analytics/dashboard'}
@@ -549,115 +483,127 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Books Display - Grid or Table */}
-          {filteredBooks.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">📚</div>
-              <h3 className="text-xl font-medium text-white mb-2">
-                {books.length === 0 ? 'Your library is empty' : 'No books match your filters'}
-              </h3>
-              <p className="text-gray-400">
-                {books.length === 0
-                  ? 'Click "Add Book" to get started!'
-                  : 'Try adjusting your search or category filters.'
-                }
-              </p>
-            </div>
-          ) : (
-            <>
-              {viewMode === 'grid' ? (
-                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {filteredBooks.map((book) => (
-                    <BookCard
-                      key={book.id}
-                      id={book.id}
-                      title={book.title}
-                      author={book.author}
-                      category={book.category}
-                      reading_status={book.reading_status}
-                      coverUrl={book.cover_url || undefined}
-                      onDelete={handleDeleteClick}
-                      onEdit={handleEditClick}
-                      progress_percentage={book.progress_percentage}
-                      date_started={book.date_started}
-                      date_finished={book.date_finished}
-                      reading_notes={book.reading_notes}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-white/5 border-b border-white/10">
-                      <tr>
-                        <th className="text-left p-4 text-gray-300">Cover</th>
-                        <th className="text-left p-4 text-gray-300">Title</th>
-                        <th className="text-left p-4 text-gray-300">Author</th>
-                        <th className="text-left p-4 text-gray-300">Category</th>
-                        <th className="text-left p-4 text-gray-300">Status</th>
-                        <th className="text-left p-4 text-gray-300">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredBooks.map((book) => (
-                        <tr key={book.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="p-4">
-                            <div className="w-8 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded flex items-center justify-center text-xs overflow-hidden">
-                              {book.cover_url ? (
-                                <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
-                              ) : (
-                                '📖'
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-4 text-white font-medium">{book.title}</td>
-                          <td className="p-4 text-gray-300">{book.author}</td>
-                          <td className="p-4">
-                            <span className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">
-                              {book.category}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className={`px-2 py-1 rounded-full text-xs ${book.reading_status === 'finished' ? 'bg-green-500/20 text-green-300' :
-                              book.reading_status === 'reading' ? 'bg-orange-500/20 text-orange-300' :
-                                'bg-gray-500/20 text-gray-300'
-                              }`}>
-                              {book.reading_status === 'finished' ? '✅ Done' :
-                                book.reading_status === 'reading' ? '📖 Reading' :
-                                  '📚 To Read'}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleEditClick(book.id)}
-                                className="text-green-400 hover:text-green-300 transition-colors cursor-pointer"
-                              >
-                                ✏️
-                              </button>
-                              <button
-                                onClick={() => handleDeleteClick(book.id)}
-                                className="text-red-400 hover:text-red-300 transition-colors cursor-pointer"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </td>
+          {/* PRIMARY CONTENT: YOUR BOOKS SECTION */}
+          <div className="mb-16">
+            {filteredBooks.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="text-6xl mb-4">📚</div>
+                <h3 className="text-xl font-medium text-white mb-2">
+                  {books.length === 0 ? 'Your library is empty' : 'No books match your filters'}
+                </h3>
+                <p className="text-gray-400">
+                  {books.length === 0
+                    ? 'Click "Add Book" to get started!'
+                    : 'Try adjusting your search or category filters.'
+                  }
+                </p>
+              </div>
+            ) : (
+              <>
+                {viewMode === 'grid' ? (
+                  <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {filteredBooks.map((book) => (
+                      <BookCard
+                        key={book.id}
+                        id={book.id}
+                        title={book.title}
+                        author={book.author}
+                        category={book.category}
+                        reading_status={book.reading_status}
+                        coverUrl={book.cover_url || undefined}
+                        onDelete={handleDeleteClick}
+                        onEdit={handleEditClick}
+                        progress_percentage={book.progress_percentage}
+                        date_started={book.date_started}
+                        date_finished={book.date_finished}
+                        reading_notes={book.reading_notes}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-white/5 border-b border-white/10">
+                        <tr>
+                          <th className="text-left p-4 text-gray-300">Cover</th>
+                          <th className="text-left p-4 text-gray-300">Title</th>
+                          <th className="text-left p-4 text-gray-300">Author</th>
+                          <th className="text-left p-4 text-gray-300">Category</th>
+                          <th className="text-left p-4 text-gray-300">Status</th>
+                          <th className="text-left p-4 text-gray-300">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </>
+                      </thead>
+                      <tbody>
+                        {filteredBooks.map((book) => (
+                          <tr key={book.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                            <td className="p-4">
+                              <div className="w-8 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded flex items-center justify-center text-xs overflow-hidden">
+                                {book.cover_url ? (
+                                  <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                                ) : (
+                                  '📖'
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-4 text-white font-medium">{book.title}</td>
+                            <td className="p-4 text-gray-300">{book.author}</td>
+                            <td className="p-4">
+                              <span className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">
+                                {book.category}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-2 py-1 rounded-full text-xs ${book.reading_status === 'finished' ? 'bg-green-500/20 text-green-300' :
+                                book.reading_status === 'reading' ? 'bg-orange-500/20 text-orange-300' :
+                                  'bg-gray-500/20 text-gray-300'
+                                }`}>
+                                {book.reading_status === 'finished' ? '✅ Done' :
+                                  book.reading_status === 'reading' ? '📖 Reading' :
+                                    '📚 To Read'}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleEditClick(book.id)}
+                                  className="text-green-400 hover:text-green-300 transition-colors cursor-pointer"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteClick(book.id)}
+                                  className="text-red-400 hover:text-red-300 transition-colors cursor-pointer"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* SECONDARY CONTENT: AI RECOMMENDATIONS (MOVED HERE!) */}
+          {books.length >= 3 && (
+            <RecommendationsSection
+              books={books}
+              onAddBookFromRecommendation={handleAddBookFromRecommendation}
+            />
           )}
+
         </div>
 
         {/* Modals */}
         <AddBookModal
           isOpen={showAddModal}
-          onClose={closeAddModal}
+          onClose={handleCloseAddModal}
           onAddBook={handleAddBook}
+          initialData={modalInitialData}
         />
 
         <DeleteConfirmModal
