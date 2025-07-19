@@ -10,6 +10,134 @@ interface BookRecommendation {
     cover_url?: string | null;
 }
 
+// Fallback recommendations if AI fails - MOVED TO TOP
+function getFallbackRecommendations(preferredGenre: string): BookRecommendation[] {
+    const fallbackBooks: Record<string, BookRecommendation[]> = {
+        'Science': [
+            {
+                title: "Sapiens",
+                author: "Yuval Noah Harari",
+                reason: "A fascinating exploration of human history and development that combines science with engaging storytelling.",
+                confidence: 8,
+                genre: "Science"
+            },
+            {
+                title: "The Immortal Life of Henrietta Lacks",
+                author: "Rebecca Skloot",
+                reason: "Combines medical science with human story, perfect for science enthusiasts who enjoy narrative non-fiction.",
+                confidence: 7,
+                genre: "Science"
+            },
+            {
+                title: "Astrophysics for People in a Hurry",
+                author: "Neil deGrasse Tyson",
+                reason: "Makes complex astrophysics accessible and engaging, perfect for curious science readers.",
+                confidence: 8,
+                genre: "Science"
+            },
+            {
+                title: "The Code Breaker",
+                author: "Walter Isaacson",
+                reason: "Fascinating biography of Jennifer Doudna and the CRISPR revolution, combining science with human story.",
+                confidence: 8,
+                genre: "Science"
+            }
+        ],
+        'Sports & Recreation': [
+            {
+                title: "Open",
+                author: "Andre Agassi",
+                reason: "An honest and compelling sports memoir that goes beyond tennis to explore personal struggles and triumphs.",
+                confidence: 8,
+                genre: "Sports"
+            },
+            {
+                title: "The Boys in the Boat",
+                author: "Daniel James Brown",
+                reason: "An inspiring story of teamwork and perseverance, combining sports history with compelling narrative.",
+                confidence: 8,
+                genre: "Sports"
+            },
+            {
+                title: "Moneyball",
+                author: "Michael Lewis",
+                reason: "Revolutionary look at baseball analytics that changed sports forever, engaging for all readers.",
+                confidence: 9,
+                genre: "Sports"
+            },
+            {
+                title: "The Last Dance",
+                author: "Michael Jordan",
+                reason: "Inside look at basketball greatness and the mentality required for championship success.",
+                confidence: 8,
+                genre: "Sports"
+            }
+        ],
+        'Fiction': [
+            {
+                title: "The Seven Husbands of Evelyn Hugo",
+                author: "Taylor Jenkins Reid",
+                reason: "An engaging novel with complex characters and compelling storytelling that's widely loved.",
+                confidence: 8,
+                genre: "Fiction"
+            },
+            {
+                title: "Where the Crawdads Sing",
+                author: "Delia Owens",
+                reason: "Beautiful coming-of-age story with mystery elements, perfect for literary fiction lovers.",
+                confidence: 8,
+                genre: "Fiction"
+            },
+            {
+                title: "The Midnight Library",
+                author: "Matt Haig",
+                reason: "Thought-provoking novel about life's possibilities and second chances, emotionally resonant.",
+                confidence: 8,
+                genre: "Fiction"
+            },
+            {
+                title: "Klara and the Sun",
+                author: "Kazuo Ishiguro",
+                reason: "Beautifully written exploration of love, consciousness, and what makes us human.",
+                confidence: 8,
+                genre: "Fiction"
+            }
+        ],
+        'General': [
+            {
+                title: "Educated",
+                author: "Tara Westover",
+                reason: "A powerful memoir about education and self-discovery that appeals to readers across all genres.",
+                confidence: 9,
+                genre: "Biography"
+            },
+            {
+                title: "Becoming",
+                author: "Michelle Obama",
+                reason: "Inspiring memoir that combines personal story with historical insight, universally appealing.",
+                confidence: 9,
+                genre: "Biography"
+            },
+            {
+                title: "The Alchemist",
+                author: "Paulo Coelho",
+                reason: "Timeless philosophical novel about following your dreams and finding your purpose.",
+                confidence: 8,
+                genre: "Philosophy"
+            },
+            {
+                title: "Atomic Habits",
+                author: "James Clear",
+                reason: "Practical guide to building good habits and breaking bad ones, applicable to all areas of life.",
+                confidence: 9,
+                genre: "Self-Help"
+            }
+        ]
+    };
+
+    return fallbackBooks[preferredGenre] || fallbackBooks['General'];
+}
+
 // Google Books API function to fetch book covers
 async function getBookCover(title: string, author: string): Promise<string | null> {
     try {
@@ -198,132 +326,4 @@ Focus on popular, well-reviewed books that are likely to be available.
             error: 'Using fallback recommendations'
         });
     }
-}
-
-// Fallback recommendations if AI fails
-function getFallbackRecommendations(preferredGenre: string): BookRecommendation[] {
-    const fallbackBooks: Record<string, BookRecommendation[]> = {
-        'Science': [
-            {
-                title: "Sapiens",
-                author: "Yuval Noah Harari",
-                reason: "A fascinating exploration of human history and development that combines science with engaging storytelling.",
-                confidence: 8,
-                genre: "Science"
-            },
-            {
-                title: "The Immortal Life of Henrietta Lacks",
-                author: "Rebecca Skloot",
-                reason: "Combines medical science with human story, perfect for science enthusiasts who enjoy narrative non-fiction.",
-                confidence: 7,
-                genre: "Science"
-            },
-            {
-                title: "Astrophysics for People in a Hurry",
-                author: "Neil deGrasse Tyson",
-                reason: "Makes complex astrophysics accessible and engaging, perfect for curious science readers.",
-                confidence: 8,
-                genre: "Science"
-            },
-            {
-                title: "The Code Breaker",
-                author: "Walter Isaacson",
-                reason: "Fascinating biography of Jennifer Doudna and the CRISPR revolution, combining science with human story.",
-                confidence: 8,
-                genre: "Science"
-            }
-        ],
-        'Sports & Recreation': [
-            {
-                title: "Open",
-                author: "Andre Agassi",
-                reason: "An honest and compelling sports memoir that goes beyond tennis to explore personal struggles and triumphs.",
-                confidence: 8,
-                genre: "Sports"
-            },
-            {
-                title: "The Boys in the Boat",
-                author: "Daniel James Brown",
-                reason: "An inspiring story of teamwork and perseverance, combining sports history with compelling narrative.",
-                confidence: 8,
-                genre: "Sports"
-            },
-            {
-                title: "Moneyball",
-                author: "Michael Lewis",
-                reason: "Revolutionary look at baseball analytics that changed sports forever, engaging for all readers.",
-                confidence: 9,
-                genre: "Sports"
-            },
-            {
-                title: "The Last Dance",
-                author: "Michael Jordan",
-                reason: "Inside look at basketball greatness and the mentality required for championship success.",
-                confidence: 8,
-                genre: "Sports"
-            }
-        ],
-        'Fiction': [
-            {
-                title: "The Seven Husbands of Evelyn Hugo",
-                author: "Taylor Jenkins Reid",
-                reason: "An engaging novel with complex characters and compelling storytelling that's widely loved.",
-                confidence: 8,
-                genre: "Fiction"
-            },
-            {
-                title: "Where the Crawdads Sing",
-                author: "Delia Owens",
-                reason: "Beautiful coming-of-age story with mystery elements, perfect for literary fiction lovers.",
-                confidence: 8,
-                genre: "Fiction"
-            },
-            {
-                title: "The Midnight Library",
-                author: "Matt Haig",
-                reason: "Thought-provoking novel about life's possibilities and second chances, emotionally resonant.",
-                confidence: 8,
-                genre: "Fiction"
-            },
-            {
-                title: "Klara and the Sun",
-                author: "Kazuo Ishiguro",
-                reason: "Beautifully written exploration of love, consciousness, and what makes us human.",
-                confidence: 8,
-                genre: "Fiction"
-            }
-        ],
-        'General': [
-            {
-                title: "Educated",
-                author: "Tara Westover",
-                reason: "A powerful memoir about education and self-discovery that appeals to readers across all genres.",
-                confidence: 9,
-                genre: "Biography"
-            },
-            {
-                title: "Becoming",
-                author: "Michelle Obama",
-                reason: "Inspiring memoir that combines personal story with historical insight, universally appealing.",
-                confidence: 9,
-                genre: "Biography"
-            },
-            {
-                title: "The Alchemist",
-                author: "Paulo Coelho",
-                reason: "Timeless philosophical novel about following your dreams and finding your purpose.",
-                confidence: 8,
-                genre: "Philosophy"
-            },
-            {
-                title: "Atomic Habits",
-                author: "James Clear",
-                reason: "Practical guide to building good habits and breaking bad ones, applicable to all areas of life.",
-                confidence: 9,
-                genre: "Self-Help"
-            }
-        ]
-    };
-
-    return fallbackBooks[preferredGenre] || fallbackBooks['General'];
 }
